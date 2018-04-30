@@ -1,31 +1,37 @@
+# AUTOMATE THE STEP OF INITIATE THE MONGODB CLUSTER
+# FROM THE MASTER DOCKER HOST
+
 - hosts: master
   become: true
   tasks:
-# The script create a mongo-admin root user in the db admin
-  - name: Copy createDB user script to docker host
+
+    # Copy mongodb script file to docker host
+  - name: Copy files
     copy:
       src: files/
       dest: /tmp/script
 
+  # Create a sample db admin and a user mongo-db with root right
+  # Refer to /files/rsinit.js for mongo shell command
   - name: Create mongo-admin user in MongoDB
     shell: >
       sudo docker exec -i mongo sh -c
-      "mongo < /home/script/createDB.js"
+      "mongo db0.test.com:27017 < /home/script/createDB.js"
 
-# The mongo-admin users are kept inside the persistance volume storage,
-# We can recreate the docker container this round with replication tag
-# The reason we have to use this method because the mongo docker Image
-# doesn't use the config file
-
+  # The mongo-admin users are kept inside the persistance volume storage,
+  # We can recreate the docker container with replication tag to enable
+  # replication set with the name rs0
   - name: Recreate mongodb master container with replSet tags
     docker_container:
       name: mongo
       image: mongo:3.4-jessie
       recreate: yes
       state: started
+      hostname: db0.test.com
       command:
         - "--replSet \"rs0\""
         - "--bind_ip 0.0.0.0"
+        - "--logpath \"/var/log/mongodb/mongod.log\""
       volumes:
         - "mongo_log:/var/log/"
         - "mongo_data:/data/db"
@@ -33,9 +39,8 @@
       ports:
         - "27017:27017"
 
-# Init the cluster with two secondary is db1.test.com and db2.test.com
-
+  # Init the cluster with two secondary is db1.test.com and db2.test.com
   - name: init the cluster
     shell: >
       sudo docker exec -i mongo sh -c
-      "mongo -u mongo-admin -p password --authenticationDatabase admin < /home/script/rsinit.js"
+      "mongo db0.test.com:27017 -u mongo-admin -p password --authenticationDatabase admin < /home/script/rsinit.js"
