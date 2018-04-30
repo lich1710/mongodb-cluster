@@ -1,0 +1,22 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+  - name: install Docker, epel-release
+    yum:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - docker
+      - epel-release
+# Install python-pip so we can install docker-py. 
+# docker-py is necessary for ansible docker to run
+  - name: install python-pip
+    yum:
+      name: python-pip
+      state: present
+
+  - name: install docker-py
+    pip:
+      name: docker-py

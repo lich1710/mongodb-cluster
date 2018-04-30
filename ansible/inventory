@@ -1,0 +1,7 @@
+# file: inventory
+[master]
+master ansible_connection=ssh  ansible_user=centos ansible_ssh_private_key_file=../stageKey
+
+[slave]
+slave1 ansible_connection=ssh  ansible_user=centos ansible_ssh_private_key_file=../stageKey
+slave2 ansible_connection=ssh  ansible_user=centos ansible_ssh_private_key_file=../stageKey

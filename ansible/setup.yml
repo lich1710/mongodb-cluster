@@ -1,0 +1,52 @@
+#############################################
+# SETUP ENVIRONMENT FOR MONGODB MASTER AND SLAVE
+#############################################
+
+# Start Docker Service on all master and slave
+- hosts: all
+  become: true
+  tasks:
+  - name: start docker service
+    systemd:
+      state: started
+      name: docker
+
+# Run master mongoDB container
+
+- hosts: master
+  become: true
+  tasks:
+  - name: start mongoDB container
+    docker_container:
+      name: mongo
+      image: mongo:3.4-jessie
+      recreate: yes
+      state: started
+      command:
+        - "--bind_ip 0.0.0.0"
+      volumes:
+        - "mongo_log:/var/log/"
+        - "mongo_data:/data/db"
+        - "/tmp/script:/home/script:z"
+      ports:
+        - "27017:27017"
+
+# Run slave mongoDB container with replication turned on
+
+- hosts: slave
+  become: true
+  tasks:
+  - name: Create slave mongoDB with replSet tags
+    docker_container:
+      name: mongo
+      image: mongo:3.4-jessie
+      recreate: yes
+      state: started
+      command:
+        - "--replSet \"rs0\""
+        - "--bind_ip 0.0.0.0"
+      volumes:
+        - "mongo_log:/var/log/"
+        - "mongo_data:/data/db"
+      ports:
+        - "27017:27017"
